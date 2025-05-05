@@ -17,14 +17,21 @@ import rarfile
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from flask_sqlalchemy import SQLAlchemy
 from flask_wtf import FlaskForm
-from wtforms import FileField, SelectField, StringField, SubmitField
-from wtforms.validators import DataRequired
+from wtforms import FileField, SelectField, StringField, SubmitField, PasswordField
+from wtforms.validators import DataRequired, Email, EqualTo, Length
+from werkzeug.security import generate_password_hash, check_password_hash
+
+# Windows için magic kütüphanesini yapılandır
+try:
+    import magic
+except ImportError:
+    import magic_bin as magic
 
 app = Flask(__name__)
 app.secret_key = 'your-secret-key-here'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///converter.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['MAX_CONTENT_LENGTH'] = 32 * 1024 * 1024  # 32MB max file size
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
 
 # Veritabanı ve kullanıcı yönetimi
 db = SQLAlchemy(app)
@@ -36,11 +43,19 @@ class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
+    password_hash = db.Column(db.String(128))
+    ip_address = db.Column(db.String(45), nullable=True)  # IPv6 için 45 karakter
     conversions = db.relationship('Conversion', backref='user', lazy=True)
+
+    def set_password(self, password):
+        self.password_hash = generate_password_hash(password)
+
+    def check_password(self, password):
+        return check_password_hash(self.password_hash, password)
 
 class Conversion(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
     original_filename = db.Column(db.String(255), nullable=False)
     converted_filename = db.Column(db.String(255), nullable=False)
     original_format = db.Column(db.String(10), nullable=False)
@@ -66,14 +81,31 @@ ALLOWED_EXTENSIONS = {
 # Form sınıfları
 class ConversionForm(FlaskForm):
     file = FileField('Dosya', validators=[DataRequired()])
-    category = SelectField('Kategori', validators=[DataRequired()])
-    target_format = SelectField('Hedef Format', validators=[DataRequired()])
+    category = SelectField('Kategori', validators=[DataRequired()], choices=[])
+    target_format = SelectField('Hedef Format', validators=[DataRequired()], choices=[])
     submit = SubmitField('Dönüştür')
+
+    def __init__(self, *args, **kwargs):
+        super(ConversionForm, self).__init__(*args, **kwargs)
+        self.category.choices = [(k, k.title()) for k in ALLOWED_EXTENSIONS.keys()]
+        if self.category.data:
+            self.update_target_formats()
+
+    def update_target_formats(self):
+        if self.category.data:
+            self.target_format.choices = [(ext, ext.upper()) for ext in ALLOWED_EXTENSIONS[self.category.data]]
 
 class LoginForm(FlaskForm):
     username = StringField('Kullanıcı Adı', validators=[DataRequired()])
-    password = StringField('Şifre', validators=[DataRequired()])
+    password = PasswordField('Şifre', validators=[DataRequired()])
     submit = SubmitField('Giriş Yap')
+
+class RegistrationForm(FlaskForm):
+    username = StringField('Kullanıcı Adı', validators=[DataRequired(), Length(min=4, max=20)])
+    email = StringField('E-posta', validators=[DataRequired(), Email()])
+    password = PasswordField('Şifre', validators=[DataRequired(), Length(min=6)])
+    password2 = PasswordField('Şifre Tekrar', validators=[DataRequired(), EqualTo('password')])
+    submit = SubmitField('Kayıt Ol')
 
 # Yükleme klasörü
 UPLOAD_FOLDER = 'uploads'
@@ -134,14 +166,12 @@ def convert_document(input_path, output_format):
 @app.route('/')
 def index():
     form = ConversionForm()
-    form.category.choices = [(k, k.title()) for k in ALLOWED_EXTENSIONS.keys()]
     return render_template('index.html', 
                          form=form,
                          categories=ALLOWED_EXTENSIONS.keys(),
                          ALLOWED_EXTENSIONS=ALLOWED_EXTENSIONS)
 
 @app.route('/convert', methods=['POST'])
-@login_required
 def convert_file():
     form = ConversionForm()
     if form.validate_on_submit():
@@ -166,16 +196,17 @@ def convert_file():
                     output = convert_document(filepath, target_format)
                 
                 if output:
-                    # Dönüşüm kaydını veritabanına ekle
-                    conversion = Conversion(
-                        user_id=current_user.id,
-                        original_filename=filename,
-                        converted_filename=f'converted.{target_format}',
-                        original_format=filename.split('.')[-1],
-                        target_format=target_format
-                    )
-                    db.session.add(conversion)
-                    db.session.commit()
+                    # Dönüşüm kaydını veritabanına ekle (eğer kullanıcı giriş yapmışsa)
+                    if current_user.is_authenticated:
+                        conversion = Conversion(
+                            user_id=current_user.id,
+                            original_filename=filename,
+                            converted_filename=f'converted.{target_format}',
+                            original_format=filename.split('.')[-1],
+                            target_format=target_format
+                        )
+                        db.session.add(conversion)
+                        db.session.commit()
                     
                     return send_file(
                         output,
@@ -202,11 +233,32 @@ def login():
     form = LoginForm()
     if form.validate_on_submit():
         user = User.query.filter_by(username=form.username.data).first()
-        if user and user.password == form.password.data:  # Gerçek uygulamada şifre hash'lenmelidir
+        if user and user.check_password(form.password.data):
             login_user(user)
             return redirect(url_for('index'))
-        flash('Geçersiz kullanıcı adı veya şifre')
+        flash('Kullanıcı adı veya şifre hatalı. Lütfen tekrar deneyin.', 'error')
     return render_template('login.html', form=form)
+
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    form = RegistrationForm()
+    if form.validate_on_submit():
+        existing_user = User.query.filter_by(username=form.username.data).first()
+        if existing_user:
+            flash('Bu kullanıcı adı zaten kullanılıyor. Lütfen başka bir kullanıcı adı seçin.', 'error')
+            return render_template('register.html', form=form)
+        existing_email = User.query.filter_by(email=form.email.data).first()
+        if existing_email:
+            flash('Bu e-posta adresi zaten kayıtlı. Lütfen başka bir e-posta adresi kullanın.', 'error')
+            return render_template('register.html', form=form)
+        user = User(username=form.username.data, email=form.email.data)
+        user.set_password(form.password.data)
+        user.ip_address = request.remote_addr
+        db.session.add(user)
+        db.session.commit()
+        flash('Kayıt başarılı! Giriş yapabilirsiniz.', 'success')
+        return redirect(url_for('login'))
+    return render_template('register.html', form=form)
 
 @app.route('/logout')
 @login_required
@@ -223,4 +275,4 @@ def history():
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
-    app.run(debug=True, host='0.0.0.0', port=5000) 
+    app.run(debug=True, host='0.0.0.0', port=5000)

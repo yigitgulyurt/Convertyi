@@ -7,13 +7,13 @@ pydub==0.25.1
 python-docx==0.8.11
 PyPDF2==3.0.1
 pandoc==2.3
-python-magic==0.4.27
+python-magic-bin==0.4.14
 Flask-Login==0.6.2
 Flask-SQLAlchemy==3.1.1
 Flask-WTF==1.2.1
-python-magic-bin==0.4.14
 moviepy==1.0.3
 mutagen==1.47.0
 ebooklib==0.18
 zipfile36==0.1.3
 rarfile==4.0 
+email_validator==2.2.0

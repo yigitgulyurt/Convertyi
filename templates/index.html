@@ -35,8 +35,13 @@
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h1>Dosya Dönüştürücü</h1>
             <div>
-                <a href="{{ url_for('history') }}" class="btn btn-info me-2">Geçmiş</a>
-                <a href="{{ url_for('logout') }}" class="btn btn-danger">Çıkış Yap</a>
+                {% if current_user.is_authenticated %}
+                    <a href="{{ url_for('history') }}" class="btn btn-info me-2">Geçmiş</a>
+                    <a href="{{ url_for('logout') }}" class="btn btn-danger">Çıkış Yap</a>
+                {% else %}
+                    <a href="{{ url_for('login') }}" class="btn btn-primary me-2">Giriş Yap</a>
+                    <a href="{{ url_for('register') }}" class="btn btn-success">Kayıt Ol</a>
+                {% endif %}
             </div>
         </div>
         
@@ -57,7 +62,7 @@
                     {{ form.csrf_token }}
                     <div class="mb-3">
                         <div class="drop-zone" id="dropZone">
-                            <p class="mb-0">Dosyayı buraya sürükleyin veya seçin</p>
+                            <p class="mb-0">Dosyayı buraya sürükleyin veya bir dosyaseçin</p>
                             <input type="file" class="form-control mt-3" id="file" name="file" required style="display: none;">
                         </div>
                     </div>
@@ -116,6 +121,8 @@
         // Sürükle-bırak işlevselliği
         const dropZone = document.getElementById('dropZone');
         const fileInput = document.getElementById('file');
+        const categorySelect = document.getElementById('category');
+        const targetFormatSelect = document.getElementById('target_format');
 
         dropZone.addEventListener('click', () => fileInput.click());
         
@@ -146,18 +153,25 @@
         }
 
         // Kategori değiştiğinde format seçeneklerini güncelle
-        document.getElementById('category').addEventListener('change', function() {
+        categorySelect.addEventListener('change', function() {
             const category = this.value;
-            const formatSelect = document.getElementById('target_format');
-            formatSelect.innerHTML = '<option value="">Format Seçin</option>';
+            targetFormatSelect.innerHTML = '<option value="">Format Seçin</option>';
             
             if (category && formats[category]) {
                 formats[category].forEach(format => {
                     const option = document.createElement('option');
                     option.value = format;
                     option.textContent = format.toUpperCase();
-                    formatSelect.appendChild(option);
+                    targetFormatSelect.appendChild(option);
                 });
+            }
+        });
+
+        // Form gönderilmeden önce kontrol
+        document.getElementById('conversionForm').addEventListener('submit', function(e) {
+            if (!categorySelect.value || !targetFormatSelect.value) {
+                e.preventDefault();
+                alert('Lütfen kategori ve hedef format seçiniz.');
             }
         });
     </script>

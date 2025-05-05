@@ -1,0 +1,40 @@
+GitHub Kullanım Rehberi
+=====================
+
+1. Değişiklikleri GitHub'a Gönderme
+----------------------------------
+Herhangi bir değişiklik yaptığınızda GitHub'a göndermek için şu adımları izleyin:
+
+1. Değişiklikleri Staging Area'ya Ekleme:
+   - Tek dosya için: git add dosya_adi
+   - Tüm değişiklikler için: git add .
+
+2. Commit Oluşturma:
+   - git commit -m "değişiklik açıklaması"
+
+3. GitHub'a Gönderme:
+   - git push origin main
+
+2. Yeni Bir Değişiklik Yapma
+--------------------------
+1. Dosyalarınızda istediğiniz değişiklikleri yapın
+2. Yukarıdaki 3 adımı tekrarlayın
+
+3. Önemli Notlar
+--------------
+- Her değişiklikten sonra bu adımları tekrarlamanız gerekir
+- Commit mesajlarınız açıklayıcı olmalıdır
+- Değişikliklerinizi GitHub'da görmek için: https://github.com/yigitgulyurt/Convertyi
+
+4. Sık Kullanılan Git Komutları
+-----------------------------
+- git status: Mevcut durumu kontrol etme
+- git log: Commit geçmişini görüntüleme
+- git pull: Uzaktaki değişiklikleri çekme
+- git diff: Yapılan değişiklikleri görüntüleme
+
+5. Yardımcı Bilgiler
+------------------
+- Proje URL'si: https://github.com/yigitgulyurt/Convertyi
+- Varsayılan branch: main
+- Değişiklikleriniz otomatik olarak main branch'ine gönderilir 
