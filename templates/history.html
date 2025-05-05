@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dönüşüm Geçmişi - Dosya Dönüştürücü</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container py-5">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>Dönüşüm Geçmişi</h1>
+            <div>
+                <a href="{{ url_for('index') }}" class="btn btn-primary me-2">Ana Sayfa</a>
+                <a href="{{ url_for('logout') }}" class="btn btn-danger">Çıkış Yap</a>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Tarih</th>
+                        <th>Orijinal Dosya</th>
+                        <th>Hedef Format</th>
+                        <th>İşlem</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for conversion in conversions %}
+                    <tr>
+                        <td>{{ conversion.timestamp.strftime('%d/%m/%Y %H:%M') }}</td>
+                        <td>{{ conversion.original_filename }}</td>
+                        <td>{{ conversion.target_format }}</td>
+                        <td>
+                            <a href="#" class="btn btn-sm btn-info">Detaylar</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html> 

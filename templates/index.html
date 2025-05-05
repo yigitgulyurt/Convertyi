@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dosya Dönüştürücü</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .category-card {
+            transition: transform 0.2s;
+            cursor: pointer;
+        }
+        .category-card:hover {
+            transform: scale(1.02);
+        }
+        .selected {
+            border: 2px solid #0d6efd;
+        }
+        .drop-zone {
+            border: 2px dashed #ccc;
+            border-radius: 4px;
+            padding: 20px;
+            text-align: center;
+            background: #f8f9fa;
+            cursor: pointer;
+        }
+        .drop-zone.dragover {
+            background: #e9ecef;
+            border-color: #0d6efd;
+        }
+    </style>
+</head>
+<body>
+    <div class="container py-5">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>Dosya Dönüştürücü</h1>
+            <div>
+                <a href="{{ url_for('history') }}" class="btn btn-info me-2">Geçmiş</a>
+                <a href="{{ url_for('logout') }}" class="btn btn-danger">Çıkış Yap</a>
+            </div>
+        </div>
+        
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <div class="row mb-4">
+            <div class="col-md-8 mx-auto">
+                <form action="{{ url_for('convert_file') }}" method="post" enctype="multipart/form-data" id="conversionForm">
+                    {{ form.csrf_token }}
+                    <div class="mb-3">
+                        <div class="drop-zone" id="dropZone">
+                            <p class="mb-0">Dosyayı buraya sürükleyin veya seçin</p>
+                            <input type="file" class="form-control mt-3" id="file" name="file" required style="display: none;">
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="category" class="form-label">Kategori Seçin</label>
+                        {{ form.category(class="form-select") }}
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="target_format" class="form-label">Hedef Format</label>
+                        {{ form.target_format(class="form-select") }}
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100">Dönüştür</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-12">
+                <h2 class="text-center mb-4">Desteklenen Formatlar</h2>
+                <div class="row">
+                    {% for category in categories %}
+                    <div class="col-md-3 mb-4">
+                        <div class="card category-card">
+                            <div class="card-body">
+                                <h5 class="card-title">{{ category|title }}</h5>
+                                <p class="card-text">
+                                    {% for ext in ALLOWED_EXTENSIONS[category] %}
+                                        .{{ ext }}
+                                    {% endfor %}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const formats = {
+            'image': ['png', 'jpg', 'jpeg', 'gif', 'bmp', 'tiff', 'webp'],
+            'video': ['mp4', 'avi', 'mov', 'wmv', 'flv', 'mkv'],
+            'audio': ['mp3', 'wav', 'ogg', 'flac', 'aac'],
+            'document': ['pdf', 'doc', 'docx', 'txt', 'rtf'],
+            'archive': ['zip', 'rar', '7z', 'tar', 'gz'],
+            'presentation': ['ppt', 'pptx', 'odp'],
+            'font': ['ttf', 'otf', 'woff', 'woff2'],
+            'ebook': ['epub', 'mobi', 'azw3', 'fb2']
+        };
+
+        // Sürükle-bırak işlevselliği
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('file');
+
+        dropZone.addEventListener('click', () => fileInput.click());
+        
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+        });
+
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('dragover');
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            fileInput.files = e.dataTransfer.files;
+            updateFileName();
+        });
+
+        fileInput.addEventListener('change', updateFileName);
+
+        function updateFileName() {
+            if (fileInput.files.length > 0) {
+                dropZone.querySelector('p').textContent = fileInput.files[0].name;
+            } else {
+                dropZone.querySelector('p').textContent = 'Dosyayı buraya sürükleyin veya seçin';
+            }
+        }
+
+        // Kategori değiştiğinde format seçeneklerini güncelle
+        document.getElementById('category').addEventListener('change', function() {
+            const category = this.value;
+            const formatSelect = document.getElementById('target_format');
+            formatSelect.innerHTML = '<option value="">Format Seçin</option>';
+            
+            if (category && formats[category]) {
+                formats[category].forEach(format => {
+                    const option = document.createElement('option');
+                    option.value = format;
+                    option.textContent = format.toUpperCase();
+                    formatSelect.appendChild(option);
+                });
+            }
+        });
+    </script>
+</body>
+</html> 
