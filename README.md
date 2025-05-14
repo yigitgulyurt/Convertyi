@@ -1,34 +1,34 @@
 # Dosya Dönüştürücü
 
-Bu proje, kullanıcıların dosyalarını farklı formatlara dönüştürmelerini sağlayan bir web uygulaması ve Telegram botudur.
+Bu proje, kullanıcıların dosyalarını farklı formatlara kolayca dönüştürebilmelerini sağlayan bir web uygulaması ve Telegram botu içerir.
 
 ## Özellikler
 
 - **Web Arayüzü**
   - JPG ↔ PNG dönüşümü
   - MP4 → MP3 dönüşümü
-  - Dosya boyutu sınırlaması (20MB)
-  - Kullanıcı dostu arayüz
+  - Dosya boyutu sınırı (20MB)
+  - Kullanıcı dostu ve basit arayüz
 
 - **Telegram Botu**
-  - Otomatik format tanıma
+  - Gönderilen dosyanın formatını otomatik algılama
   - Dosya boyutu kontrolü
-  - Kolay kullanım
+  - Kolay ve hızlı kullanım
 
 ## Kurulum
 
-1. Gerekli paketleri yükleyin:
+1. Gerekli Python paketlerini yükleyin:
    ```bash
    pip install -r requirements.txt
    ```
 
-2. `.env` dosyasını oluşturun:
+2. Ortam değişkenleri için `.env` dosyasını oluşturun:
    ```bash
    cp .env.example .env
    ```
-   `.env` dosyasını düzenleyerek gerekli değişkenleri ayarlayın.
+   Ardından `.env` dosyasını düzenleyin.
 
-3. Geçici dosya dizinini oluşturun:
+3. Geçici dosyalar için klasör oluşturun:
    ```bash
    mkdir temp
    ```
@@ -39,40 +39,30 @@ Bu proje, kullanıcıların dosyalarını farklı formatlara dönüştürmelerin
 ```bash
 python app.py
 ```
-Tarayıcıda `http://localhost:5000` adresine gidin.
+Tarayıcıda `http://localhost:5000` adresine giderek uygulamayı kullanabilirsiniz.
 
 ### Telegram Botu
 ```bash
 python telegram_bot.py
 ```
-Botu Telegram'da başlatın ve dosya gönderin.
+Telegram'da bota dosya göndererek dönüştürme işlemini başlatabilirsiniz.
 
 ## Desteklenen Formatlar
 
 - **Görsel**
-  - JPG/JPEG → PNG
-  - PNG → JPG
-
+  - JPG/JPEG ↔ PNG
 - **Video**
   - MP4 → MP3
 
 ## Güvenlik
 
-- Dosya boyutu sınırlaması
+- Dosya boyutu sınırı (20MB)
 - Güvenli dosya isimlendirme
 - Geçici dosyaların otomatik temizlenmesi
-- İzin verilen dosya türleri kontrolü
+- Sadece izin verilen dosya türlerinin kabul edilmesi
 
-## Geliştirme
+## Katkı ve Geliştirme
 
-1. Yeni format desteği eklemek için:
-   - `converters/` klasörüne yeni bir dönüştürücü modülü ekleyin
-   - `app.py` ve `telegram_bot.py` dosyalarında gerekli güncellemeleri yapın
+- Yeni format desteği eklemek için `converters/` klasörüne yeni bir dönüştürücü modülü ekleyin ve ilgili dosyalarda gerekli güncellemeleri yapın.
+- Yeni özellikler eklemek için ilgili modülleri güncelleyip test edin.
 
-2. Yeni özellik eklemek için:
-   - İlgili modülleri güncelleyin
-   - Gerekli testleri yapın
-
-## Lisans
-
-MIT 
