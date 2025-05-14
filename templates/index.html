@@ -1,0 +1,549 @@
+{% extends "base.html" %}
+
+{% block title %}Dosya Dönüştürücü - ConvertYi{% endblock %}
+
+{% block content %}
+<!-- Progress Modals -->
+<!-- Upload Progress Modal -->
+<div class="modal fade" id="uploadModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-upload me-2"></i>ConvertYi - Dosya Yükleniyor
+                </h5>
+            </div>
+            <div class="modal-body">
+                <div class="progress" style="height: 25px;">
+                    <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" id="uploadProgress" style="width: 0%">
+                        <span class="progress-text">0%</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Conversion Progress Modal -->
+<div class="modal fade" id="conversionModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-cog fa-spin me-2"></i>ConvertYi - Dönüştürülüyor
+                </h5>
+            </div>
+            <div class="modal-body">
+                <div class="progress" style="height: 25px;">
+                    <div class="progress-bar progress-bar-striped progress-bar-animated bg-info" role="progressbar" id="conversionProgress" style="width: 0%">
+                        <span class="progress-text">0%</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Download Progress Modal -->
+<div class="modal fade" id="downloadModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-download me-2"></i>ConvertYi - İndiriliyor
+                </h5>
+            </div>
+            <div class="modal-body">
+                <div class="progress" style="height: 25px;">
+                    <div class="progress-bar progress-bar-striped progress-bar-animated bg-success" role="progressbar" id="downloadProgress" style="width: 0%">
+                        <span class="progress-text">0%</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow-lg">
+            <div class="card-header bg-primary text-white py-3">
+                <h4 class="mb-0">
+                    <i class="fas fa-exchange-alt me-2"></i>ConvertYi - Dosya Dönüştür
+                </h4>
+            </div>
+            <div class="card-body p-4">
+                <form method="POST" action="{{ url_for('convert_file') }}" enctype="multipart/form-data" id="conversionForm">
+                    {{ form.csrf_token }}
+                    
+                    <div class="file-upload-wrapper mb-4">
+                        {{ form.file(class="form-control", id="fileInput", style="display: none;", accept=".jpg,.jpeg,.png,.gif,.bmp,.tiff,.webp,.mp4,.avi,.mov,.wmv,.flv,.mkv,.mp3,.wav,.ogg,.flac,.aac,.pdf,.doc,.docx,.txt,.rtf,.zip,.rar,.7z,.tar,.gz,.ppt,.pptx,.odp,.ttf,.otf,.woff,.woff2,.epub,.mobi,.azw3,.fb2") }}
+                        <div class="file-upload-message" id="fileUploadMessage">
+                            <i class="fas fa-cloud-upload-alt fa-3x mb-3"></i>
+                            <h5>ConvertYi ile Dosyanızı Dönüştürün</h5>
+                            <p class="text-muted">Dosyanızı sürükleyip bırakın veya seçin</p>
+                            <button type="button" class="btn btn-outline-primary mt-2" onclick="document.getElementById('fileInput').click()">
+                                <i class="fas fa-folder-open me-2"></i>Dosya Seç
+                            </button>
+                        </div>
+                        <div id="selectedFile" class="mt-3" style="display: none;">
+                            <div class="alert alert-info d-flex align-items-center">
+                                <i class="fas fa-file me-2"></i>
+                                <span id="fileName"></span>
+                                <button type="button" class="btn-close ms-auto" onclick="resetFileInput()"></button>
+                            </div>
+                        </div>
+                        {% if form.file.errors %}
+                            {% for error in form.file.errors %}
+                                <div class="text-danger mt-2">
+                                    <i class="fas fa-exclamation-circle me-1"></i>{{ error }}
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-4">
+                            {{ form.category.label(class="form-label fw-bold") }}
+                            {{ form.category(class="form-select form-select-lg", id="categorySelect") }}
+                            {% if form.category.errors %}
+                                {% for error in form.category.errors %}
+                                    <div class="text-danger mt-2">
+                                        <i class="fas fa-exclamation-circle me-1"></i>{{ error }}
+                                    </div>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+
+                        <div class="col-md-6 mb-4">
+                            {{ form.target_format.label(class="form-label fw-bold") }}
+                            {{ form.target_format(class="form-select form-select-lg", id="targetFormatSelect") }}
+                            {% if form.target_format.errors %}
+                                {% for error in form.target_format.errors %}
+                                    <div class="text-danger mt-2">
+                                        <i class="fas fa-exclamation-circle me-1"></i>{{ error }}
+                                    </div>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="d-flex gap-3 mt-4">
+                        {{ form.submit(class="btn btn-primary btn-lg flex-grow-1", id="convertButton") }}
+                        <button type="button" class="btn btn-success btn-lg d-none" id="downloadButton">
+                            <i class="fas fa-download me-2"></i>İndir
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        {% if not current_user.is_authenticated %}
+            <div class="card shadow-lg mt-4">
+                <div class="card-header bg-info text-white py-3">
+                    <h5 class="mb-0">
+                        <i class="fas fa-crown me-2"></i>ConvertYi Premium
+                    </h5>
+                </div>
+                <div class="card-body p-4">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <ul class="list-unstyled">
+                                <li class="mb-3">
+                                    <i class="fas fa-check-circle text-success me-2"></i>
+                                    <strong>32MB'a kadar</strong> dosya dönüştürme
+                                </li>
+                                <li class="mb-3">
+                                    <i class="fas fa-check-circle text-success me-2"></i>
+                                    <strong>Yüksek kalite</strong> dönüşümler
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <ul class="list-unstyled">
+                                <li class="mb-3">
+                                    <i class="fas fa-check-circle text-success me-2"></i>
+                                    <strong>Dönüşüm geçmişi</strong> görüntüleme
+                                </li>
+                                <li class="mb-3">
+                                    <i class="fas fa-check-circle text-success me-2"></i>
+                                    <strong>Dosya paylaşımı</strong> özelliği
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="mt-4 text-center">
+                        <a href="{{ url_for('register') }}" class="btn btn-success btn-lg me-2">
+                            <i class="fas fa-user-plus me-2"></i>Kayıt Ol
+                        </a>
+                        <a href="{{ url_for('login') }}" class="btn btn-outline-primary btn-lg">
+                            <i class="fas fa-sign-in-alt me-2"></i>Giriş Yap
+                        </a>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+.progress {
+    border-radius: 10px;
+    background-color: #f0f0f0;
+}
+
+.progress-bar {
+    border-radius: 10px;
+    transition: width 0.3s ease;
+}
+
+.progress-text {
+    position: absolute;
+    width: 100%;
+    text-align: center;
+    color: white;
+    font-weight: bold;
+    text-shadow: 1px 1px 1px rgba(0,0,0,0.3);
+}
+
+.file-upload-wrapper {
+    border: 2px dashed #dee2e6;
+    border-radius: 10px;
+    padding: 40px 20px;
+    text-align: center;
+    transition: all 0.3s ease;
+    background-color: #f8f9fa;
+}
+
+.file-upload-wrapper:hover {
+    border-color: #0d6efd;
+    background-color: #f0f7ff;
+}
+
+.file-upload-wrapper.dragover {
+    border-color: #0d6efd;
+    background-color: #e6f0ff;
+}
+
+.form-control-lg {
+    font-size: 1.1rem;
+}
+
+.form-select-lg {
+    font-size: 1.1rem;
+}
+
+.btn-lg {
+    padding: 0.8rem 1.5rem;
+    font-size: 1.1rem;
+}
+
+.card {
+    border: none;
+    border-radius: 15px;
+}
+
+.card-header {
+    border-radius: 15px 15px 0 0 !important;
+}
+
+.badge {
+    font-size: 0.8rem;
+    padding: 0.5em 0.8em;
+}
+</style>
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('conversionForm');
+    const fileInput = document.getElementById('fileInput');
+    const fileUploadMessage = document.getElementById('fileUploadMessage');
+    const selectedFile = document.getElementById('selectedFile');
+    const fileName = document.getElementById('fileName');
+    const convertButton = document.getElementById('convertButton');
+    const downloadButton = document.getElementById('downloadButton');
+    let convertedFilename = null;
+    
+    // Modal instances
+    const uploadModal = new bootstrap.Modal(document.getElementById('uploadModal'));
+    const conversionModal = new bootstrap.Modal(document.getElementById('conversionModal'));
+    const downloadModal = new bootstrap.Modal(document.getElementById('downloadModal'));
+    
+    // Progress bars
+    const uploadProgress = document.getElementById('uploadProgress');
+    const conversionProgress = document.getElementById('conversionProgress');
+    const downloadProgress = document.getElementById('downloadProgress');
+
+    // Format verilerini hazırla
+    const formatData = {
+        {% for category, formats in ALLOWED_EXTENSIONS.items() %}
+            "{{ category }}": {{ formats|list|tojson }},
+        {% endfor %}
+    };
+
+    // Dosya uzantısından kategori bul
+    function findCategoryByExtension(extension) {
+        for (const [category, formats] of Object.entries(formatData)) {
+            if (formats.includes(extension.toLowerCase())) {
+                return category;
+            }
+        }
+        return null;
+    }
+
+    // Dosya seçildiğinde
+    fileInput.addEventListener('change', function() {
+        const file = this.files[0];
+        if (file) {
+            // Dosya türü kontrolü
+            const extension = file.name.split('.').pop().toLowerCase();
+            const allowedExtensions = [
+                'jpg', 'jpeg', 'png', 'gif', 'bmp', 'tiff', 'webp',
+                'mp4', 'avi', 'mov', 'wmv', 'flv', 'mkv',
+                'mp3', 'wav', 'ogg', 'flac', 'aac',
+                'pdf', 'doc', 'docx', 'txt', 'rtf',
+                'zip', 'rar', '7z', 'tar', 'gz',
+                'ppt', 'pptx', 'odp',
+                'ttf', 'otf', 'woff', 'woff2',
+                'epub', 'mobi', 'azw3', 'fb2'
+            ];
+
+            if (!allowedExtensions.includes(extension)) {
+                alert('Desteklenmeyen dosya formatı. Lütfen geçerli bir dosya seçin.');
+                resetFileInput();
+                return;
+            }
+
+            // Seçilen dosyayı göster
+            fileName.textContent = file.name;
+            fileUploadMessage.style.display = 'none';
+            selectedFile.style.display = 'block';
+
+            // Otomatik kategori ve format seçimi
+            const category = findCategoryByExtension(extension);
+            
+            if (category) {
+                const categorySelect = document.getElementById('categorySelect');
+                categorySelect.value = category;
+                updateTargetFormats(category);
+                
+                const currentFormat = extension;
+                const targetFormatSelect = document.getElementById('targetFormatSelect');
+                const targetOptions = Array.from(targetFormatSelect.options);
+                const currentFormatIndex = targetOptions.findIndex(option => 
+                    option.value.toLowerCase() === currentFormat
+                );
+                
+                if (currentFormatIndex !== -1) {
+                    targetOptions.splice(currentFormatIndex, 1);
+                    targetFormatSelect.innerHTML = '';
+                    targetOptions.forEach(option => {
+                        targetFormatSelect.appendChild(option);
+                    });
+                }
+            }
+        }
+    });
+
+    // Dosya sürükle-bırak işlemleri
+    const fileUploadWrapper = document.querySelector('.file-upload-wrapper');
+
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        fileUploadWrapper.addEventListener(eventName, preventDefaults, false);
+    });
+
+    function preventDefaults(e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+
+    ['dragenter', 'dragover'].forEach(eventName => {
+        fileUploadWrapper.addEventListener(eventName, highlight, false);
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+        fileUploadWrapper.addEventListener(eventName, unhighlight, false);
+    });
+
+    function highlight(e) {
+        fileUploadWrapper.classList.add('dragover');
+    }
+
+    function unhighlight(e) {
+        fileUploadWrapper.classList.remove('dragover');
+    }
+
+    fileUploadWrapper.addEventListener('drop', handleDrop, false);
+
+    function handleDrop(e) {
+        const dt = e.dataTransfer;
+        const files = dt.files;
+        
+        if (files.length > 0) {
+            const file = files[0];
+            const extension = file.name.split('.').pop().toLowerCase();
+            const allowedExtensions = [
+                'jpg', 'jpeg', 'png', 'gif', 'bmp', 'tiff', 'webp',
+                'mp4', 'avi', 'mov', 'wmv', 'flv', 'mkv',
+                'mp3', 'wav', 'ogg', 'flac', 'aac',
+                'pdf', 'doc', 'docx', 'txt', 'rtf',
+                'zip', 'rar', '7z', 'tar', 'gz',
+                'ppt', 'pptx', 'odp',
+                'ttf', 'otf', 'woff', 'woff2',
+                'epub', 'mobi', 'azw3', 'fb2'
+            ];
+
+            if (!allowedExtensions.includes(extension)) {
+                alert('Desteklenmeyen dosya formatı. Lütfen geçerli bir dosya seçin.');
+                return;
+            }
+
+            fileInput.files = files;
+            fileInput.dispatchEvent(new Event('change'));
+        }
+    }
+
+    // Modal kapatma fonksiyonu
+    function closeModal(modal) {
+        modal.hide();
+        document.body.classList.remove('modal-open');
+        const backdrop = document.querySelector('.modal-backdrop');
+        if (backdrop) {
+            backdrop.remove();
+        }
+    }
+
+    // Form gönderildiğinde
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(this);
+        const xhr = new XMLHttpRequest();
+        
+        // Conversion modal'ı göster
+        conversionModal.show();
+        
+        // XHR progress olaylarını dinle
+        xhr.upload.onprogress = function(e) {
+            if (e.lengthComputable) {
+                const percentComplete = (e.loaded / e.total) * 100;
+                conversionProgress.style.width = percentComplete + '%';
+                conversionProgress.textContent = Math.round(percentComplete) + '%';
+            }
+        };
+
+        // İsteği gönder
+        xhr.open('POST', form.action, true);
+        xhr.onload = function() {
+            if (xhr.status === 200) {
+                const response = JSON.parse(xhr.responseText);
+                if (response.success) {
+                    convertedFilename = response.filename;
+                    downloadButton.classList.remove('d-none');
+                } else {
+                    alert('Dönüştürme başarısız: ' + response.message);
+                }
+            } else {
+                alert('Bir hata oluştu. Lütfen tekrar deneyin.');
+            }
+            closeModal(conversionModal);
+        };
+        xhr.send(formData);
+    });
+
+    // İndir butonuna tıklandığında
+    downloadButton.addEventListener('click', function() {
+        if (!convertedFilename) {
+            alert('Dönüştürülmüş dosya bulunamadı.');
+            return;
+        }
+
+        // Download modal'ı göster
+        downloadModal.show();
+        
+        // Dosyayı indir
+        const xhr = new XMLHttpRequest();
+        xhr.open('GET', `/download/${convertedFilename}`, true);
+        xhr.responseType = 'blob';
+        
+        xhr.onprogress = function(e) {
+            if (e.lengthComputable) {
+                const percentComplete = (e.loaded / e.total) * 100;
+                downloadProgress.style.width = percentComplete + '%';
+                downloadProgress.textContent = Math.round(percentComplete) + '%';
+            }
+        };
+        
+        xhr.onload = function() {
+            if (xhr.status === 200) {
+                const blob = xhr.response;
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = convertedFilename;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+                
+                // Form ve dosya verilerini temizle
+                form.reset();
+                fileInput.value = '';
+                fileUploadMessage.style.display = 'block';
+                selectedFile.style.display = 'none';
+                downloadButton.classList.add('d-none');
+                convertedFilename = null;
+                
+                // Sayfayı yenile
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1000);
+            }
+            closeModal(downloadModal);
+        };
+        
+        xhr.send();
+    });
+
+    // Kategori değiştiğinde hedef formatları güncelle
+    document.getElementById('categorySelect').addEventListener('change', function() {
+        const selectedCategory = this.value;
+        updateTargetFormats(selectedCategory);
+    });
+
+    // Hedef formatları güncelle
+    function updateTargetFormats(category) {
+        const targetFormatSelect = document.getElementById('targetFormatSelect');
+        targetFormatSelect.innerHTML = '';
+        if (formatData[category]) {
+            formatData[category].forEach(format => {
+                const option = document.createElement('option');
+                option.value = format;
+                option.textContent = format.toUpperCase();
+                targetFormatSelect.appendChild(option);
+            });
+        }
+    }
+
+    // Dosya seçimini sıfırla
+    window.resetFileInput = function() {
+        fileInput.value = '';
+        fileUploadMessage.style.display = 'block';
+        selectedFile.style.display = 'none';
+    };
+
+    // Modal kapatma olaylarını dinle
+    document.querySelectorAll('.modal').forEach(modal => {
+        modal.addEventListener('hidden.bs.modal', function() {
+            document.body.classList.remove('modal-open');
+            const backdrop = document.querySelector('.modal-backdrop');
+            if (backdrop) {
+                backdrop.remove();
+            }
+        });
+    });
+});
+</script>
+{% endblock %}
+{% endblock %} 

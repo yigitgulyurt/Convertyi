@@ -1,0 +1,84 @@
+/* Genel Ayarlar */
+body {
+    font-family: 'Segoe UI', sans-serif;
+    background-color: #f8f9fa;
+    color: #333;
+}
+
+/* Başlıklar */
+h2, h4, h5 {
+    font-weight: 600;
+}
+
+/* Kartlar */
+.card {
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.card-header {
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
+}
+
+/* Form Elemanları */
+.form-control, .form-select {
+    border-radius: 6px;
+    padding: 10px;
+}
+
+.btn {
+    border-radius: 6px;
+    padding: 10px 20px;
+}
+
+/* Tablolar */
+.table {
+    background-color: #fff;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.table thead th {
+    background-color: #e9ecef;
+    font-weight: 600;
+}
+
+.table-striped > tbody > tr:nth-of-type(odd) {
+    background-color: #f2f2f2;
+}
+
+/* Renk Özelleştirmeleri */
+.bg-primary {
+    background-color: #007bff !important;
+}
+
+.bg-info {
+    background-color: #17a2b8 !important;
+}
+
+.text-white {
+    color: #fff !important;
+}
+
+.text-danger {
+    font-size: 0.875rem;
+}
+
+/* Rozetler */
+.badge {
+    padding: 6px 10px;
+    font-size: 0.85rem;
+}
+
+/* Uyarılar */
+.alert {
+    border-radius: 8px;
+}
+
+/* Mobil Uyum */
+@media (max-width: 768px) {
+    .card {
+        margin-bottom: 20px;
+    }
+}

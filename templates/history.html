@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block title %}Dönüşüm Geçmişi - ConvertYi - Dosya Dönüştürücü{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Dönüştürme Geçmişi</h2>
+    {% if conversions %}
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Orijinal Dosya</th>
+                    <th>Dönüştürülen Dosya</th>
+                    <th>Orijinal Format</th>
+                    <th>Hedef Format</th>
+                    <th>Tarih</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for conversion in conversions %}
+                <tr>
+                    <td>{{ conversion.original_filename }}</td>
+                    <td>{{ conversion.converted_filename }}</td>
+                    <td>{{ conversion.original_format }}</td>
+                    <td>{{ conversion.target_format }}</td>
+                    <td>{{ conversion.timestamp.strftime('%d.%m.%Y %H:%M') }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="alert alert-info">
+        Henüz dönüştürme geçmişiniz bulunmuyor.
+    </div>
+    {% endif %}
+</div>
+{% endblock %} 
